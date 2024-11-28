@@ -1046,8 +1046,20 @@ async function removeExpiredCodes() {
 // Set interval to remove expired codes every 60 seconds
 setInterval(removeExpiredCodes, 60000);
 
-// Route to serve the main API data file
-app.get('/api', limiter, async (req, res) => {
+const validApiKeys = ['PASSWORD8032112']; // Add valid API keys here or fetch from a database
+
+// Middleware to validate API key
+function validateApiKey(req, res, next) {
+    const apiKey = req.headers['x-api-key']; // API key should be sent in the request header
+    if (validApiKeys.includes(apiKey)) {
+        next(); // Proceed to the next middleware/route handler
+    } else {
+        res.status(403).json({ error: 'Forbidden. Invalid API key.' });
+    }
+}
+
+// Secure the /api route with the API key middleware
+app.get('/api', limiter, requireAuth, requireAdmin, validateApiKey, async (req, res) => {
     try {
         const snapshot = await db.collection('communities').get();
         const communities = snapshot.docs.map(doc => ({
