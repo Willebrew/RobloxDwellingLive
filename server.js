@@ -20,7 +20,8 @@ admin.initializeApp({
     credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        API_KEY: process.env.API_KEY
     }),
     databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
 });
@@ -112,7 +113,7 @@ async function createInitialSuperuser() {
 }
 
 // Uncomment createInitialSuperuser(); to create initial superuser, then comment out again
-//createInitialSuperuser();
+// createInitialSuperuser();
 
 /**
  * Reads data from a specified file.
@@ -1043,22 +1044,23 @@ async function removeExpiredCodes() {
     }
 }
 
-// Set interval to remove expired codes every 60 seconds
-setInterval(removeExpiredCodes, 60000);
+const validApiKeys = process.env.API_KEYS ? process.env.API_KEYS.split(',') : [];
 
-const validApiKeys = ['PASSWORD8032112']; // Replace with actual valid key(s)
-
+// Middleware for API key validation
 function validateApiKey(req, res, next) {
-    const apiKey = req.headers['x-api-key'];
+    const apiKey = (req.headers['x-api-key'] || '').trim();
     if (validApiKeys.includes(apiKey)) {
         next();
     } else {
-        res.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: 'Unauthorized: Invalid API key' });
     }
 }
 
-// Secure the /api route with the API key middleware
-app.get('/api', limiter, requireAuth, requireAdmin, validateApiKey, async (req, res) => {
+// Set interval to remove expired codes every 60 seconds
+setInterval(removeExpiredCodes, 60000);
+
+// Route to serve the main API data file
+app.get('/api', limiter, validateApiKey, async (req, res) => {
     try {
         const snapshot = await db.collection('communities').get();
         const communities = snapshot.docs.map(doc => ({
