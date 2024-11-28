@@ -112,7 +112,7 @@ async function createInitialSuperuser() {
 }
 
 // Uncomment createInitialSuperuser(); to create initial superuser, then comment out again
-// createInitialSuperuser();
+//createInitialSuperuser();
 
 /**
  * Reads data from a specified file.
@@ -1046,15 +1046,14 @@ async function removeExpiredCodes() {
 // Set interval to remove expired codes every 60 seconds
 setInterval(removeExpiredCodes, 60000);
 
-const validApiKeys = ['PASSWORD8032112']; // Add valid API keys here or fetch from a database
+const validApiKeys = ['PASSWORD8032112']; // Replace with actual valid key(s)
 
-// Middleware to validate API key
 function validateApiKey(req, res, next) {
-    const apiKey = req.headers['x-api-key']; // API key should be sent in the request header
+    const apiKey = req.headers['x-api-key'];
     if (validApiKeys.includes(apiKey)) {
-        next(); // Proceed to the next middleware/route handler
+        next();
     } else {
-        res.status(403).json({ error: 'Forbidden. Invalid API key.' });
+        res.status(401).json({ error: 'Unauthorized' });
     }
 }
 
